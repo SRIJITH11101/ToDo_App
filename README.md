@@ -1,6 +1,6 @@
 # todo_app
 
-A new Flutter project.
+A Basic ToDo app made using Provider for Statemanagement.
 
 ## Getting Started
 
