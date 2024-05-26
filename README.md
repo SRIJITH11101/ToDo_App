@@ -1,6 +1,6 @@
 # todo_app
 
-A Basic ToDo app made using Provider for Statemanagement.
+A Basic ToDo app made using Provider for StateManagement.
 
 ## Getting Started
 
