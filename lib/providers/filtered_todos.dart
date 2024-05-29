@@ -63,6 +63,7 @@ class FilteredTodos with ChangeNotifier {
           .toList();
     }
 
-    _state = _state.copyWith()
+    _state = _state.copyWith(filteredtodos: _filteredTodos);
+    notifyListeners();
   }
 }

@@ -41,6 +41,7 @@ class TodoList with ChangeNotifier {
     final newTodos = [..._state.todos, newTodo];
 
     _state = _state.copyWith(todos: newTodos);
+    print(_state);
     notifyListeners();
   }
 
@@ -71,6 +72,13 @@ class TodoList with ChangeNotifier {
       }
       return todo;
     }).toList();
+
+    _state = _state.copyWith(todos: newTodos);
+    notifyListeners();
+  }
+
+  void removTodo(Todo todo) {
+    final newTodos = _state.todos.where((Todo t) => t.id != todo.id).toList();
 
     _state = _state.copyWith(todos: newTodos);
     notifyListeners();
