@@ -6,6 +6,7 @@ import 'package:todo_app/providers/filtered_todos.dart';
 import 'package:todo_app/providers/todo_filter.dart';
 import 'package:todo_app/providers/todo_list.dart';
 import 'package:todo_app/providers/todo_search.dart';
+import 'package:todo_app/utils/debounce.dart';
 
 class ToDoPage extends StatefulWidget {
   const ToDoPage({super.key});
@@ -96,7 +97,8 @@ class _CreateTodoState extends State<CreateTodo> {
 }
 
 class SearchAndFilterTodo extends StatelessWidget {
-  const SearchAndFilterTodo({super.key});
+  SearchAndFilterTodo({super.key});
+  final debounce = Debounce(ms: 1000);
 
   @override
   Widget build(BuildContext context) {
@@ -112,7 +114,9 @@ class SearchAndFilterTodo extends StatelessWidget {
             ),
             onChanged: (String? newSearchTerm) {
               if (newSearchTerm != null) {
-                context.read<TodoSearch>().setSearchTerm(newSearchTerm);
+                debounce.run(() {
+                  context.read<TodoSearch>().setSearchTerm(newSearchTerm);
+                });
               }
             },
           ),
@@ -179,10 +183,32 @@ class ShowTodos extends StatelessWidget {
             key: ValueKey(todos[index].id),
             background: showBackground(0),
             secondaryBackground: showBackground(1),
-            child: Text(
-              todos[index].desc,
-              style: TextStyle(fontSize: 20),
-            ),
+            child: TodoItem(todo: todos[index]),
+            onDismissed: (_) {
+              context.read<TodoList>().removTodo(todos[index]);
+            },
+            confirmDismiss: (_) {
+              return showDialog(
+                context: context,
+                barrierDismissible: false,
+                builder: (context) {
+                  return AlertDialog(
+                    title: Text('Are you sure?'),
+                    content: Text('Do you really want to delete?'),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(context, false),
+                        child: Text('No'),
+                      ),
+                      TextButton(
+                        onPressed: () => Navigator.pop(context, true),
+                        child: Text('Yes'),
+                      )
+                    ],
+                  );
+                },
+              );
+            },
           );
         },
         separatorBuilder: (BuildContext context, int index) {
@@ -203,14 +229,73 @@ class TodoItem extends StatefulWidget {
 }
 
 class _TodoItemState extends State<TodoItem> {
+  late final TextEditingController textController;
+
+  @override
+  void initState() {
+    textController = TextEditingController();
+    // TODO: implement initState
+    super.initState();
+  }
+
+  @override
+  void dispose() {
+    // TODO: implement dispose
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     return ListTile(
+      onTap: () {
+        showDialog(
+          context: context,
+          builder: (context) {
+            bool _error = false;
+            textController.text = widget.todo.desc;
+            return StatefulBuilder(
+              builder: (BuildContext context, setState) {
+                return AlertDialog(
+                  title: Text("Edit Todo"),
+                  content: TextField(
+                    controller: textController,
+                    autofocus: true,
+                    decoration: InputDecoration(
+                        errorText: _error ? 'Value cannot be empty' : null),
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: Text('CANCEL'),
+                    ),
+                    TextButton(
+                      onPressed: () {
+                        setState(() {
+                          _error = textController.text.isEmpty ? true : false;
+                          if (!_error) {
+                            context
+                                .read<TodoList>()
+                                .editTodo(widget.todo.id, textController.text);
+                            Navigator.pop(context);
+                          }
+                        });
+                      },
+                      child: Text('EDIT'),
+                    ),
+                  ],
+                );
+              },
+            );
+          },
+        );
+      },
       leading: Checkbox(
         value: widget.todo.completed,
-        onChanged: (bool? checked) {},
+        onChanged: (bool? checked) {
+          context.read<TodoList>().toggleTodo(widget.todo.id);
+        },
       ),
-      title: Text(widget.todo.desc, style: TextStyle(fontSize: 20)),
+      title: Text(widget.todo.desc, style: TextStyle(fontSize: 18)),
     );
   }
 }
